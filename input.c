@@ -12,13 +12,10 @@ struct virt_device {
 	struct input_dev *button_dev;
 	struct work_struct input_work;
 	struct workqueue_struct *input_workqueue;
+	struct bin_attribute bin;
 };
 
 struct virt_device virt_dev;
-/*
-static struct input_dev *button_dev;
-static struct workqueue_struct *input_workqueue;
-*/
 
 static unsigned char button_keycode[0x72] = {	/* American layout */
 	[0]	 = KEY_GRAVE,
@@ -148,12 +145,31 @@ static irqreturn_t button_interrupt(int irq,void *dev_instance)
 static void input_work_routine(struct work_struct *work)
 {
 	printk("input test \n");
+	input_report_key(virt_dev.button_dev, KEY_F5, 1);
+	input_report_key(virt_dev.button_dev, KEY_F5, 0);
+	input_sync(virt_dev.button_dev);
 }
+
+static ssize_t input_bin_write(struct file *filp, struct kobject *kobj,
+                struct bin_attribute *attr,
+                char *buf, loff_t off, size_t count)
+{
+	printk("input write \n");
+	queue_work(virt_dev.input_workqueue, &(virt_dev.input_work));
+	return 1;
+}
+
+static ssize_t input_bin_read(struct file *filp, struct kobject *kobj,
+                struct bin_attribute *attr,
+                char *buf, loff_t off, size_t count)
+{
+	return 0;
+}
+
 static int __init button_init(void)
 {
 	int error;
 	int i;
-//	struct work_struct input_work;
 
 	virt_dev.button_dev = input_allocate_device();
 	if (!virt_dev.button_dev) {
@@ -192,9 +208,20 @@ static int __init button_init(void)
 
 	INIT_WORK(&(virt_dev.input_work),input_work_routine);
 //	queue_work(virt_dev.input_workqueue, &(virt_dev.input_work));
+	sysfs_bin_attr_init(&virt_dev.bin);
+	virt_dev.bin.attr.name = "virtkey";
+	virt_dev.bin.attr.mode = S_IRUGO | S_IWUSR;
+	virt_dev.bin.read = input_bin_read;
+	virt_dev.bin.write = input_bin_write;
+	virt_dev.bin.size = 256;
+	error = sysfs_create_bin_file(&virt_dev.button_dev->dev.kobj, &virt_dev.bin);
+	if (error)
+		goto err_unreg_queue;
 
 	return 0;
 
+err_unreg_queue:
+	destroy_workqueue(virt_dev.input_workqueue);
 err_unreg_dev:
 	input_unregister_device(virt_dev.button_dev);
 err_free_irq:
