@@ -5,14 +5,22 @@
 #include <linux/input.h>
 #include <linux/bitops.h>
 #include <linux/interrupt.h>
+#include <linux/slab.h>
+#include <linux/list.h>
 
 #define  BUTTON_IRQ 0xb
+
+struct scan_code {
+	unsigned char keycode;
+	struct list_head list;
+};
 
 struct virt_device {
 	struct input_dev *button_dev;
 	struct work_struct input_work;
 	struct workqueue_struct *input_workqueue;
 	struct bin_attribute bin;
+	struct list_head code_list;
 };
 
 struct virt_device virt_dev;
@@ -154,7 +162,18 @@ static ssize_t input_bin_write(struct file *filp, struct kobject *kobj,
                 struct bin_attribute *attr,
                 char *buf, loff_t off, size_t count)
 {
+	struct scan_code *code_tmp;
+	struct scan_code *code = (struct scan_code *)kmalloc(sizeof(struct scan_code), GFP_KERNEL);
 	printk("input write \n");
+	if (!code) {
+		printk("write error no buff \n");
+		return 1;
+	}
+	code->keycode = 1;
+	list_add_tail(&code->list, &(virt_dev.code_list));
+
+	list_for_each_entry(code_tmp, &(virt_dev.code_list), list)
+		printk("LQQ-> %d \n", code_tmp->keycode);
 	queue_work(virt_dev.input_workqueue, &(virt_dev.input_work));
 	return 1;
 }
@@ -217,6 +236,8 @@ static int __init button_init(void)
 	error = sysfs_create_bin_file(&virt_dev.button_dev->dev.kobj, &virt_dev.bin);
 	if (error)
 		goto err_unreg_queue;
+
+	INIT_LIST_HEAD(&(virt_dev.code_list));
 
 	return 0;
 
