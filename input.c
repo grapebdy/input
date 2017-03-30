@@ -6,8 +6,19 @@
 #include <linux/bitops.h>
 #include <linux/interrupt.h>
 
-#define  BUTTON_IRQ 0x5
+#define  BUTTON_IRQ 0xb
+
+struct virt_device {
+	struct input_dev *button_dev;
+	struct work_struct input_work;
+	struct workqueue_struct *input_workqueue;
+};
+
+struct virt_device virt_dev;
+/*
 static struct input_dev *button_dev;
+static struct workqueue_struct *input_workqueue;
+*/
 
 static unsigned char button_keycode[0x72] = {	/* American layout */
 	[0]	 = KEY_GRAVE,
@@ -119,73 +130,87 @@ static unsigned char button_keycode[0x72] = {	/* American layout */
 	[112]	 = KEY_KPASTERISK,	/* FIXME */
 	[113]	 = KEY_KPASTERISK	/* FIXME */
 };
+
 unsigned int intr_lock = 0;
 module_param(intr_lock, uint, 0644);
+
 static irqreturn_t button_interrupt(int irq,void *dev_instance)
 {
 	if (intr_lock) {
 		intr_lock = 0;
-		input_report_key(button_dev, KEY_F5, 1);
-		input_report_key(button_dev, KEY_F5, 0);
-		input_sync(button_dev);
+		input_report_key(virt_dev.button_dev, KEY_F5, 1);
+		input_report_key(virt_dev.button_dev, KEY_F5, 0);
+		input_sync(virt_dev.button_dev);
 	}
 	return IRQ_RETVAL(1);
 }
 
+static void input_work_routine(struct work_struct *work)
+{
+	printk("input test \n");
+}
 static int __init button_init(void)
 {
 	int error;
 	int i;
+//	struct work_struct input_work;
 
-	button_dev = input_allocate_device();
-	if (!button_dev) {
+	virt_dev.button_dev = input_allocate_device();
+	if (!virt_dev.button_dev) {
 		printk(KERN_ERR"input.c: Not enough memory\n");
 		return  -ENOMEM;
 	}
 
-	if (request_irq(BUTTON_IRQ, button_interrupt, IRQF_SHARED, "button", button_dev)) {
+	if (request_irq(BUTTON_IRQ, button_interrupt, IRQF_SHARED, "button", virt_dev.button_dev)) {
 		printk(KERN_ERR"input.c: Can't allocate irq %d\n", BUTTON_IRQ);
 		goto err_free_dev;
 	}
 
+	virt_dev.button_dev->name = "button";
+	virt_dev.button_dev->phys = "lqq/button";
+        virt_dev.button_dev->id.bustype = BUS_HOST;
+        virt_dev.button_dev->id.vendor = 0x0001;
+        virt_dev.button_dev->id.product = 0x0001;
+        virt_dev.button_dev->id.version = 0x0100;
 
-	button_dev->name = "button";
-
-	button_dev->phys = "lqq/button";
-        button_dev->id.bustype = BUS_HOST;
-        button_dev->id.vendor = 0x0001;
-        button_dev->id.product = 0x0001;
-        button_dev->id.version = 0x0100;
-/*
-	button_dev->rep[REP_PERIOD] = 33;
-	button_dev->rep[REP_DELAY] = 250;
-*/
-
-	set_bit(EV_REP, button_dev->evbit);
-	set_bit(EV_KEY, button_dev->evbit);
+	set_bit(EV_REP, virt_dev.button_dev->evbit);
+	set_bit(EV_KEY, virt_dev.button_dev->evbit);
 	for (i = 0; i < 0x72; i++)
-		set_bit(button_keycode[i], button_dev->keybit);
+		set_bit(button_keycode[i], virt_dev.button_dev->keybit);
 
-	error = input_register_device(button_dev);
+	error = input_register_device(virt_dev.button_dev);
 	if (error) {
 		printk(KERN_ERR"input.c: Failed to register device\n");
 		goto err_free_irq;
 	}
 
+	virt_dev.input_workqueue = alloc_workqueue("button", WQ_MEM_RECLAIM | WQ_HIGHPRI, 0);
+	if (!virt_dev.input_workqueue) {
+		printk("workqueue failed, use interrupt mode\n");
+		goto err_unreg_dev;
+	}
+
+	INIT_WORK(&(virt_dev.input_work),input_work_routine);
+//	queue_work(virt_dev.input_workqueue, &(virt_dev.input_work));
+
 	return 0;
 
+err_unreg_dev:
+	input_unregister_device(virt_dev.button_dev);
 err_free_irq:
-	free_irq(BUTTON_IRQ, button_dev);
+	free_irq(BUTTON_IRQ, virt_dev.button_dev);
 err_free_dev:
-	input_free_device(button_dev);
+	input_free_device(virt_dev.button_dev);
 	return error;
 }
 
 static void __exit button_exit(void)
 {
-	input_unregister_device(button_dev);
-	input_free_device(button_dev);
-	free_irq(BUTTON_IRQ, button_dev);
+	input_unregister_device(virt_dev.button_dev);
+	input_free_device(virt_dev.button_dev);
+	free_irq(BUTTON_IRQ, virt_dev.button_dev);
+	if (!virt_dev.input_workqueue)
+		destroy_workqueue(virt_dev.input_workqueue);
 }
 
 module_init(button_init);
