@@ -152,28 +152,40 @@ static irqreturn_t button_interrupt(int irq,void *dev_instance)
 
 static void input_work_routine(struct work_struct *work)
 {
+	struct scan_code *code_tmp;
+
 	printk("input test \n");
-	input_report_key(virt_dev.button_dev, KEY_F5, 1);
-	input_report_key(virt_dev.button_dev, KEY_F5, 0);
-	input_sync(virt_dev.button_dev);
+
+	while (!list_empty(virt_dev.code_list.next)) {
+		code_tmp = list_entry(virt_dev.code_list.next, struct scan_code, list);
+		printk("queue: %x \n", code_tmp->keycode);
+
+		input_report_key(virt_dev.button_dev, button_keycode[code_tmp->keycode], 1);
+		input_report_key(virt_dev.button_dev, button_keycode[code_tmp->keycode], 0);
+		input_sync(virt_dev.button_dev);
+		list_del(virt_dev.code_list.next);
+		kfree(code_tmp);
+	}
+
 }
 
 static ssize_t input_bin_write(struct file *filp, struct kobject *kobj,
                 struct bin_attribute *attr,
                 char *buf, loff_t off, size_t count)
 {
-	struct scan_code *code_tmp;
+//	struct scan_code *code_tmp;
 	struct scan_code *code = (struct scan_code *)kmalloc(sizeof(struct scan_code), GFP_KERNEL);
-	printk("input write \n");
 	if (!code) {
 		printk("write error no buff \n");
 		return 1;
 	}
-	code->keycode = 1;
+	printk("buff: %x\n", buf[0]);
+	code->keycode = buf[0];
 	list_add_tail(&code->list, &(virt_dev.code_list));
-
+/*
 	list_for_each_entry(code_tmp, &(virt_dev.code_list), list)
 		printk("LQQ-> %d \n", code_tmp->keycode);
+*/
 	queue_work(virt_dev.input_workqueue, &(virt_dev.input_work));
 	return 1;
 }
