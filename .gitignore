@@ -8,3 +8,8 @@
 .tmp_versions/
 
 tags
+
+
+# for test
+test/key
+test/virtkey
