@@ -9,6 +9,7 @@
 #include <linux/list.h>
 
 #define  BUTTON_IRQ 0xb
+#define  KEY_MAP_SIZE 113
 
 struct scan_code {
 	unsigned char keycode;
@@ -143,8 +144,8 @@ static irqreturn_t button_interrupt(int irq,void *dev_instance)
 {
 	if (intr_lock) {
 		intr_lock = 0;
-		input_report_key(virt_dev.button_dev, KEY_F5, 1);
-		input_report_key(virt_dev.button_dev, KEY_F5, 0);
+		input_report_key(virt_dev.button_dev, BTN_LEFT, 1);
+		input_report_key(virt_dev.button_dev, BTN_LEFT, 0);
 		input_sync(virt_dev.button_dev);
 	}
 	return IRQ_RETVAL(1);
@@ -154,11 +155,10 @@ static void input_work_routine(struct work_struct *work)
 {
 	struct scan_code *code_tmp;
 
-	printk("input test \n");
-
 	while (!list_empty(virt_dev.code_list.next)) {
+
 		code_tmp = list_entry(virt_dev.code_list.next, struct scan_code, list);
-		printk("queue: %x \n", code_tmp->keycode);
+		printk("workqueue input data: %x \n", code_tmp->keycode);
 
 		input_report_key(virt_dev.button_dev, button_keycode[code_tmp->keycode], 1);
 		input_report_key(virt_dev.button_dev, button_keycode[code_tmp->keycode], 0);
@@ -173,19 +173,20 @@ static ssize_t input_bin_write(struct file *filp, struct kobject *kobj,
                 struct bin_attribute *attr,
                 char *buf, loff_t off, size_t count)
 {
-//	struct scan_code *code_tmp;
-	struct scan_code *code = (struct scan_code *)kmalloc(sizeof(struct scan_code), GFP_KERNEL);
+	struct scan_code *code;
+
+	code  = (struct scan_code *)kmalloc(sizeof(struct scan_code), GFP_KERNEL);
 	if (!code) {
 		printk("write error no buff \n");
 		return 1;
 	}
-	printk("buff: %x\n", buf[0]);
-	code->keycode = buf[0];
+
+	if (buf[0] > KEY_MAP_SIZE)
+		code->keycode = 0;
+	else
+		code->keycode = buf[0];
 	list_add_tail(&code->list, &(virt_dev.code_list));
-/*
-	list_for_each_entry(code_tmp, &(virt_dev.code_list), list)
-		printk("LQQ-> %d \n", code_tmp->keycode);
-*/
+
 	queue_work(virt_dev.input_workqueue, &(virt_dev.input_work));
 	return 1;
 }
@@ -222,6 +223,12 @@ static int __init button_init(void)
 
 	set_bit(EV_REP, virt_dev.button_dev->evbit);
 	set_bit(EV_KEY, virt_dev.button_dev->evbit);
+	set_bit(EV_ABS, virt_dev.button_dev->evbit);
+
+	set_bit(BTN_LEFT, virt_dev.button_dev->keybit);
+	set_bit(BTN_RIGHT, virt_dev.button_dev->keybit);
+	set_bit(BTN_MIDDLE, virt_dev.button_dev->keybit);
+
 	for (i = 0; i < 0x72; i++)
 		set_bit(button_keycode[i], virt_dev.button_dev->keybit);
 
@@ -238,7 +245,7 @@ static int __init button_init(void)
 	}
 
 	INIT_WORK(&(virt_dev.input_work),input_work_routine);
-//	queue_work(virt_dev.input_workqueue, &(virt_dev.input_work));
+
 	sysfs_bin_attr_init(&virt_dev.bin);
 	virt_dev.bin.attr.name = "virtkey";
 	virt_dev.bin.attr.mode = S_IRUGO | S_IWUSR;
