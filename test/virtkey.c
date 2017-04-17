@@ -6,10 +6,107 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <linux/input.h>
 
 #include "../include/common.h"
 
 #define MOUSE_FILE "/dev/virtmouse"
+
+int keyboard_alt_click(int keycode)
+{
+        int fd = -1;
+        int rd_num;
+	virt_msg msg1;
+
+        fd = open(MOUSE_FILE, O_RDWR | O_SYNC);
+        if (fd < 0) {
+                fprintf(stderr, "cannot open %s\n", MOUSE_FILE);
+                return fd;
+        }
+	msg1.keycode  = KEY_LEFTALT;
+	msg1.pressup = 1;
+	rd_num = ioctl(fd, VT_KEYBOARD_KEY, &msg1);
+
+	msg1.keycode  = keycode;
+	msg1.pressup = 1;
+	rd_num = ioctl(fd, VT_KEYBOARD_KEY, &msg1);
+
+	msg1.keycode  = keycode;
+	msg1.pressup = 0;
+	rd_num = ioctl(fd, VT_KEYBOARD_KEY, &msg1);
+
+	msg1.keycode  = KEY_LEFTALT;
+	msg1.pressup = 0;
+	rd_num = ioctl(fd, VT_KEYBOARD_KEY, &msg1);
+
+        close(fd);
+        return rd_num;
+
+}
+int keyboard_ctl_click(int keycode)
+{
+
+        int fd = -1;
+        int rd_num;
+	virt_msg msg1;
+
+        fd = open(MOUSE_FILE, O_RDWR | O_SYNC);
+        if (fd < 0) {
+                fprintf(stderr, "cannot open %s\n", MOUSE_FILE);
+                return fd;
+        }
+	msg1.keycode  = KEY_LEFTCTRL;
+	msg1.pressup = 1;
+	rd_num = ioctl(fd, VT_KEYBOARD_KEY, &msg1);
+
+	msg1.keycode  = keycode;
+	msg1.pressup = 1;
+	rd_num = ioctl(fd, VT_KEYBOARD_KEY, &msg1);
+
+	msg1.keycode  = keycode;
+	msg1.pressup = 0;
+	rd_num = ioctl(fd, VT_KEYBOARD_KEY, &msg1);
+
+	msg1.keycode  = KEY_LEFTCTRL;
+	msg1.pressup = 0;
+	rd_num = ioctl(fd, VT_KEYBOARD_KEY, &msg1);
+
+        close(fd);
+        return rd_num;
+}
+
+
+int keyboard_shift_click(int keycode)
+{
+
+        int fd = -1;
+        int rd_num;
+	virt_msg msg1;
+
+        fd = open(MOUSE_FILE, O_RDWR | O_SYNC);
+        if (fd < 0) {
+                fprintf(stderr, "cannot open %s\n", MOUSE_FILE);
+                return fd;
+        }
+	msg1.keycode  = KEY_LEFTSHIFT;
+	msg1.pressup = 1;
+	rd_num = ioctl(fd, VT_KEYBOARD_KEY, &msg1);
+
+	msg1.keycode  = keycode;
+	msg1.pressup = 1;
+	rd_num = ioctl(fd, VT_KEYBOARD_KEY, &msg1);
+
+	msg1.keycode  = keycode;
+	msg1.pressup = 0;
+	rd_num = ioctl(fd, VT_KEYBOARD_KEY, &msg1);
+
+	msg1.keycode  = KEY_LEFTSHIFT;
+	msg1.pressup = 0;
+	rd_num = ioctl(fd, VT_KEYBOARD_KEY, &msg1);
+
+        close(fd);
+        return rd_num;
+}
 
 int key_write(const char *filename, unsigned char buff)
 {
@@ -96,10 +193,11 @@ int mouse_left_click(const char *filename)
 
 }
 
+
 int mouse_options(const char *filename, unsigned char buff)
 {
-        int fd = -1;
-        int rd_num;
+	int fd = -1;
+	int rd_num;
 	virt_msg msg;
         fd = open(filename, O_RDWR | O_SYNC);
         if (fd < 0) {
@@ -155,8 +253,16 @@ int main(int argc, char *argv[])
 		do_usage();
 		return -1;
 	}
-	while ((opt = getopt(argc,argv,"f:k:trlmnxy")) !=-1) {
+	while ((opt = getopt(argc,argv,"a:c:s:f:k:trlmnxy")) !=-1) {
 		switch (opt) {
+		case 'a':
+			keycode = atoi(optarg);
+			keyboard_alt_click(keycode);
+			return 0;
+		case 'c':
+			keycode = atoi(optarg);
+			keyboard_ctl_click(keycode);
+			return 0;
 		case 'f':
 			fileno = atoi(optarg);
 			break;
@@ -178,6 +284,10 @@ int main(int argc, char *argv[])
 		case 'x':
 			mouse_middle_rel(MOUSE_FILE);
 			break;
+		case 's':
+			keycode = atoi(optarg);
+			keyboard_shift_click(keycode);
+			return 0;
 		default:
 			do_usage();
 			return -1;
