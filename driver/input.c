@@ -237,7 +237,7 @@ ssize_t virt_mouse_write(struct file *filp, const char __user *buffer, size_t si
 
 long virt_mouse_ioctl(struct file *filp, unsigned int cmd , unsigned long arg)
 {
-
+	virt_msg *msg = (virt_msg *)arg;
         switch(cmd) {
 	case VT_MOUSE_BT_LEFTT:
 		printk("%s: VT_MOUSE_BT_LEFTT \n", __func__);
@@ -263,6 +263,15 @@ long virt_mouse_ioctl(struct file *filp, unsigned int cmd , unsigned long arg)
 		input_report_rel(virt_dev.button_dev, REL_Y, 10);
 		input_sync(virt_dev.button_dev);
 		break;
+	case VT_KEYBOARD_KEY:
+		printk("%s: VT_KEYBOARD_KEY %d: %d\n",
+			__func__, msg->keycode, msg->pressup);
+		input_report_key(virt_dev.button_dev,
+			button_keycode[msg->keycode], msg->pressup);
+		input_sync(virt_dev.button_dev);
+		break;
+	default:
+		printk("%s: COMMAND is not available\n", __func__);
 	}
 
 	return 0;

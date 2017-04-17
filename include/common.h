@@ -7,4 +7,14 @@
 
 #define VT_MOUSE_REL		_IOWR('R',1,int)
 
+#define VT_KEYBOARD_KEY		_IOWR('K',1,int)
+
+typedef struct virtkey_msg {
+	int relx;
+	int rely;
+
+	int keycode;
+	int pressup;
+}virt_msg;
+
 #endif

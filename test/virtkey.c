@@ -100,18 +100,28 @@ int mouse_options(const char *filename, unsigned char buff)
 {
         int fd = -1;
         int rd_num;
+	virt_msg msg;
         fd = open(filename, O_RDWR | O_SYNC);
         if (fd < 0) {
                 fprintf(stderr, "cannot open %s\n", filename);
                 return fd;
         }
-
-        rd_num = write(fd, &buff, 1);
+        msg.relx = 1;
+        msg.rely = 2;
         rd_num = read(fd, &buff, 1);
-      //  rd_num = ioctl(fd, VT_MOUSE_BT_LEFTT, &buff);
-      //  rd_num = ioctl(fd, VT_MOUSE_BT_RIGHT, &buff);
-      //  rd_num = ioctl(fd, VT_MOUSE_BT_MIDDL, &buff);
-	rd_num = ioctl(fd, VT_MOUSE_REL, &buff);
+        rd_num = write(fd, &buff, 1);
+	//rd_num = ioctl(fd, VT_MOUSE_BT_LEFTT, &buff);
+	//rd_num = ioctl(fd, VT_MOUSE_BT_RIGHT, &buff);
+	//rd_num = ioctl(fd, VT_MOUSE_BT_MIDDL, &buff);
+	//rd_num = ioctl(fd, VT_MOUSE_REL, &buff);
+
+        msg.keycode = 3;
+        msg.pressup = 1;
+	rd_num = ioctl(fd, VT_KEYBOARD_KEY, &msg);
+
+        msg.keycode = 3;
+        msg.pressup = 0;
+	rd_num = ioctl(fd, VT_KEYBOARD_KEY, &msg);
 
         close(fd);
         return rd_num;
@@ -139,11 +149,12 @@ int main(int argc, char *argv[])
 	int keycode =28; // enter
 	int fileno = 4;	 // input device 4
 	char filename[128];
-	if (argc < 3) {
+	virt_msg msg;
+
+	if (argc < 2) {
 		do_usage();
 		return -1;
 	}
-
 	while ((opt = getopt(argc,argv,"f:k:trlmnxy")) !=-1) {
 		switch (opt) {
 		case 'f':
