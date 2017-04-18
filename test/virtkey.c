@@ -150,18 +150,20 @@ int key_write(const char *filename, unsigned char buff)
 }
 
 
-int mouse_middle_rel(const char *filename)
+int mouse_middle_rel(int relx, int rely)
 {
 
         int fd = -1;
         int rd_num;
-	char buff[4];
-        fd = open(filename, O_RDWR | O_SYNC);
+	virt_msg msg;
+        fd = open(MOUSE_FILE, O_RDWR | O_SYNC);
         if (fd < 0) {
-                fprintf(stderr, "cannot open %s\n", filename);
+                fprintf(stderr, "cannot open %s\n", MOUSE_FILE);
                 return fd;
         }
-	rd_num = ioctl(fd, VT_MOUSE_REL, buff);
+	msg.relx = relx;
+	msg.rely = rely;
+	rd_num = ioctl(fd, VT_MOUSE_REL, &msg);
         close(fd);
         return rd_num;
 }
@@ -258,7 +260,7 @@ struct keymap_detail {
 {"9",10}, {"0",11}, {"-",12}, {"=",13}, {"<-",14}, {"TAB",15}, {"q",16}, {"w",17}, {"e",18}, {"r",19},
 {"t",20}, {"y",21}, {"u",22}, {"i",23}, {"o",24}, {"p",25}, {"[",26}, {"]",27}, {"enter",28}, {"leftctl",29},
 {"a",30}, {"s",31}, {"d",32}, {"f",33}, {"g",34}, {"h",35}, {"j",36}, {"k",37}, {"l",38}, {";",39},
-{"'",40}, {"\\",41}, {"leftshit",42}, {"",43}, {"z",44}, {"x",45}, {"c",46}, {"v",47}, {"b",48}, {"n",49},
+{"'",40}, {"\\",41}, {"leftshift",42}, {"",43}, {"z",44}, {"x",45}, {"c",46}, {"v",47}, {"b",48}, {"n",49},
 {"m",50}, {",",51}, {".",52}, {"/",53}, {"rightshift",54}, {"*",55}, {"leftatl",56}, {"space",57}, {"caplock",58}, {"F1",59},
 
 {"F2",60}, {"F3",61}, {"F4",62}, {"F5",63}, {"F6",64}, {"F7",65}, {"F8",66}, {"F9",67}, {"F10",68}, {"ESC",69},
@@ -284,13 +286,12 @@ void do_usage(void)
         printf("virtual keyboard program\n");
         printf("Command:\n");
         printf("\t-k keycode\t\t Write key code normal\n");
-        printf("\t-s keycode\t\t Write key code with shit\n");
+        printf("\t-s keycode\t\t Write key code with shift\n");
         printf("\t-c keycode\t\t Write key code with ctl\n");
         printf("\t-a keycode\t\t Write key code with alt\n");
         printf("\t-r        \t\t mouse right click\n");
         printf("\t-l        \t\t mouse left  click\n");
         printf("\t-m        \t\t mouse middle click\n");
-        printf("\t-n        \t\t mouse mov  pixel\n");
         printf("\t-x xposion\t\t mouse move x position\n");
         printf("\t-y yposion\t\t mouse move y position\n");
         printf("\t-v        \t\t show the keyboard map\n");
@@ -301,12 +302,15 @@ int main(int argc, char *argv[])
 {
 	int opt;
 	int keycode =28; // enter
+	int relx = 0;
+	int rely = 0;
+	int mouse_rel = 0;
 
 	if (argc < 2) {
 		do_usage();
 		return -1;
 	}
-	while ((opt = getopt(argc,argv,"a:c:s:k:trlmnxyv")) !=-1) {
+	while ((opt = getopt(argc,argv,"a:c:s:k:x:y:rlmnvt")) !=-1) {
 		switch (opt) {
 		case 'a':
 			keycode = atoi(optarg);
@@ -333,7 +337,12 @@ int main(int argc, char *argv[])
 			mouse_middle_click(MOUSE_FILE);
 			break;
 		case 'x':
-			mouse_middle_rel(MOUSE_FILE);
+			relx = atoi(optarg);
+			mouse_rel++;
+			break;
+		case 'y':
+			rely = atoi(optarg);
+			mouse_rel++;
 			break;
 		case 's':
 			keycode = atoi(optarg);
@@ -348,5 +357,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (mouse_rel)
+		mouse_middle_rel(relx, rely);
 	return 0;
 }

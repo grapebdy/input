@@ -281,9 +281,10 @@ long virt_mouse_ioctl(struct file *filp, unsigned int cmd , unsigned long arg)
 		input_sync(virt_dev.button_dev);
 		break;
 	case VT_MOUSE_REL:
-		PDEBUG("%s: VT_MOUSE_BT_REL \n", __func__);
-		input_report_rel(virt_dev.button_dev, REL_X, 10);
-		input_report_rel(virt_dev.button_dev, REL_Y, 10);
+		PDEBUG("%s: VT_MOUSE_BT_REL relx:%d, rely: %d\n",
+					__func__, msg->relx, msg->rely);
+		input_report_rel(virt_dev.button_dev, REL_X, msg->relx);
+		input_report_rel(virt_dev.button_dev, REL_Y, msg->rely);
 		input_sync(virt_dev.button_dev);
 		break;
 	case VT_KEYBOARD_KEY:
