@@ -281,7 +281,7 @@ void keymap_detail(void)
 void do_usage(void)
 {
         printf("Usage: virtkey cmd [OPERAND]...\n");
-        printf("EEPROM test program\n");
+        printf("virtual keyboard program\n");
         printf("Command:\n");
         printf("\t-k keycode\t\t Write key code normal\n");
         printf("\t-s keycode\t\t Write key code with shit\n");
