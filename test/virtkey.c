@@ -75,6 +75,31 @@ int keyboard_ctl_click(int keycode)
         return rd_num;
 }
 
+int keyboard_normal_click(int keycode)
+{
+
+        int fd = -1;
+        int rd_num;
+	virt_msg msg1;
+
+        fd = open(MOUSE_FILE, O_RDWR | O_SYNC);
+        if (fd < 0) {
+                fprintf(stderr, "cannot open %s\n", MOUSE_FILE);
+                return fd;
+        }
+	msg1.keycode  = keycode;
+	msg1.pressup = 1;
+	rd_num = ioctl(fd, VT_KEYBOARD_KEY, &msg1);
+
+	msg1.keycode  = keycode;
+	msg1.pressup = 0;
+	rd_num = ioctl(fd, VT_KEYBOARD_KEY, &msg1);
+
+        close(fd);
+        return rd_num;
+}
+
+
 
 int keyboard_shift_click(int keycode)
 {
@@ -230,8 +255,10 @@ void do_usage(void)
         printf("Usage: virtkey cmd [OPERAND]...\n");
         printf("EEPROM test program\n");
         printf("Command:\n");
-        printf("\t-f filename\t\t virtkey input file(dmesg)\n");
-        printf("\t-k keycode\t\t Write key code\n");
+        printf("\t-k keycode\t\t Write key code normal\n");
+        printf("\t-s keycode\t\t Write key code with shit\n");
+        printf("\t-c keycode\t\t Write key code with ctl\n");
+        printf("\t-a keycode\t\t Write key code with alt\n");
         printf("\t-r \t\t mouse right click\n");
         printf("\t-l \t\t mouse left  click\n");
         printf("\t-m \t\t mouse middle click\n");
@@ -245,15 +272,12 @@ int main(int argc, char *argv[])
 {
 	int opt;
 	int keycode =28; // enter
-	int fileno = 4;	 // input device 4
-	char filename[128];
-	virt_msg msg;
 
 	if (argc < 2) {
 		do_usage();
 		return -1;
 	}
-	while ((opt = getopt(argc,argv,"a:c:s:f:k:trlmnxy")) !=-1) {
+	while ((opt = getopt(argc,argv,"a:c:s:k:trlmnxy")) !=-1) {
 		switch (opt) {
 		case 'a':
 			keycode = atoi(optarg);
@@ -263,11 +287,9 @@ int main(int argc, char *argv[])
 			keycode = atoi(optarg);
 			keyboard_ctl_click(keycode);
 			return 0;
-		case 'f':
-			fileno = atoi(optarg);
-			break;
 		case 'k':
 			keycode = atoi(optarg);
+			keyboard_normal_click(keycode);
 			break;
 		case 't':
 			mouse_options(MOUSE_FILE, 10);
@@ -293,10 +315,6 @@ int main(int argc, char *argv[])
 			return -1;
 		}
 	}
-
-	sprintf(filename, "%s%d%s", "/sys/devices/virtual/input/input", fileno, "/virtkey");
-	printf("%s:%d \n", filename, keycode);
-	key_write(filename, keycode);
 
 	return 0;
 }

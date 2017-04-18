@@ -14,6 +14,29 @@
 #define  BUTTON_IRQ 0xb
 #define  KEY_MAP_SIZE 113
 
+//#define VIRTKEY_DEBUG
+#ifdef VIRTKEY_DEBUG
+#define PDEBUG(fmt,args...)                             \
+                do {                                    \
+                        printk(fmt,## args);            \
+                } while (0)
+
+#define PERROR(fmt,args...)                             \
+                do {                                    \
+                        printk(fmt,## args);            \
+                } while (0)
+#else
+#define PDEBUG(fmt,args...)                             \
+                do {                                    \
+                } while (0)
+
+#define PERROR(fmt,args...)                             \
+                do {                                    \
+                } while (0)
+
+#endif
+
+
 struct scan_code {
 	unsigned char keycode;
 	struct list_head list;
@@ -225,13 +248,13 @@ int virt_mouse_release(struct inode *fnod, struct file *filp)
 }
 ssize_t virt_mouse_read(struct file *filp, char __user *buffer, size_t size, loff_t *ppos)
 {
-	printk("%s \n", __func__);
+	PDEBUG("%s \n", __func__);
 	return 0;
 }
 
 ssize_t virt_mouse_write(struct file *filp, const char __user *buffer, size_t size, loff_t *ppos)
 {
-	printk("%s \n", __func__);
+	PDEBUG("%s \n", __func__);
 	return 0;
 }
 
@@ -240,31 +263,31 @@ long virt_mouse_ioctl(struct file *filp, unsigned int cmd , unsigned long arg)
 	virt_msg *msg = (virt_msg *)arg;
 	switch(cmd) {
 	case VT_MOUSE_BT_LEFTT:
-		printk("%s: VT_MOUSE_BT_LEFTT \n", __func__);
+		PDEBUG("%s: VT_MOUSE_BT_LEFTT \n", __func__);
 		input_report_key(virt_dev.button_dev, BTN_LEFT, 1);
 		input_report_key(virt_dev.button_dev, BTN_LEFT, 0);
 		input_sync(virt_dev.button_dev);
 		break;
 	case VT_MOUSE_BT_RIGHT:
-		printk("%s: VT_MOUSE_BT_RIGHT \n", __func__);
+		PDEBUG("%s: VT_MOUSE_BT_RIGHT \n", __func__);
 		input_report_key(virt_dev.button_dev, BTN_RIGHT, 1);
 		input_report_key(virt_dev.button_dev, BTN_RIGHT, 0);
 		input_sync(virt_dev.button_dev);
 		break;
 	case VT_MOUSE_BT_MIDDL:
-		printk("%s: VT_MOUSE_BT_MIDDL \n", __func__);
+		PDEBUG("%s: VT_MOUSE_BT_MIDDL \n", __func__);
 		input_report_key(virt_dev.button_dev, BTN_MIDDLE, 1);
 		input_report_key(virt_dev.button_dev, BTN_MIDDLE, 0);
 		input_sync(virt_dev.button_dev);
 		break;
 	case VT_MOUSE_REL:
-		printk("%s: VT_MOUSE_BT_REL \n", __func__);
+		PDEBUG("%s: VT_MOUSE_BT_REL \n", __func__);
 		input_report_rel(virt_dev.button_dev, REL_X, 10);
 		input_report_rel(virt_dev.button_dev, REL_Y, 10);
 		input_sync(virt_dev.button_dev);
 		break;
 	case VT_KEYBOARD_KEY:
-		printk("%s: VT_KEYBOARD_KEY %d: %d\n",
+		PDEBUG("%s: VT_KEYBOARD_KEY %d: %d\n",
 			__func__, msg->keycode, msg->pressup);
 
 		input_report_key(virt_dev.button_dev,
