@@ -14,16 +14,16 @@
 #define  BUTTON_IRQ 0xb
 #define  KEY_MAP_SIZE 113
 
-#define PDEBUG(fmt,args...)                             \
-                do {                                    \
-			if(debug_level)			\
-                     	   printk(fmt,## args);         \
-                } while (0)
+#define PDEBUG(fmt,args...)			\
+	do {                                    \
+		if (debug_level)		\
+			printk(fmt,## args);    \
+	} while (0)
 
-#define PERROR(fmt,args...)                             \
-                do {                                    \
-                        printk(fmt,## args);            \
-                } while (0)
+#define PERROR(fmt,args...)			\
+	do {                                    \
+		printk(fmt,## args);		\
+	} while (0)
 
 
 struct scan_code {
