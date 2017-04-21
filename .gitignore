@@ -10,6 +10,8 @@
 tags
 
 
-# for test
+# for test files
 test/key
 test/virtkey
+#for release files
+*.tar
