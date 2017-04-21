@@ -14,27 +14,16 @@
 #define  BUTTON_IRQ 0xb
 #define  KEY_MAP_SIZE 113
 
-//#define VIRTKEY_DEBUG
-#ifdef VIRTKEY_DEBUG
 #define PDEBUG(fmt,args...)                             \
                 do {                                    \
-                        printk(fmt,## args);            \
+			if(debug_level)			\
+                     	   printk(fmt,## args);         \
                 } while (0)
 
 #define PERROR(fmt,args...)                             \
                 do {                                    \
                         printk(fmt,## args);            \
                 } while (0)
-#else
-#define PDEBUG(fmt,args...)                             \
-                do {                                    \
-                } while (0)
-
-#define PERROR(fmt,args...)                             \
-                do {                                    \
-                } while (0)
-
-#endif
 
 
 struct scan_code {
@@ -172,6 +161,8 @@ static unsigned char button_keycode[0x72] = {	/* American layout */
 
 unsigned int intr_lock = 0;
 module_param(intr_lock, uint, 0644);
+unsigned int debug_level = 0;
+module_param(debug_level, uint, 0644);
 
 static irqreturn_t button_interrupt(int irq,void *dev_instance)
 {
