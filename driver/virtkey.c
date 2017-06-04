@@ -195,7 +195,7 @@ static void unregister_virtmouse(void)
 
 static int __init button_init(void)
 {
-	int error;
+	int error = -1;
 	int i;
 
 	virt_dev.button_dev = input_allocate_device();
