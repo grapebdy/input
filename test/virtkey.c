@@ -43,6 +43,7 @@ int keyboard_alt_click(int keycode)
         return rd_num;
 
 }
+
 int keyboard_ctl_click(int keycode)
 {
 
@@ -98,8 +99,6 @@ int keyboard_normal_click(int keycode)
         close(fd);
         return rd_num;
 }
-
-
 
 int keyboard_shift_click(int keycode)
 {
@@ -220,7 +219,6 @@ int mouse_left_click(const char *filename)
 
 }
 
-
 int mouse_options(const char *filename, unsigned char buff)
 {
 	int fd = -1;
@@ -286,6 +284,7 @@ struct keymap_detail {
 {"down",	108}, {"*",		109}, {"*",		110}, {"*",		111},
 {"*",		112}, {"*",		113},
 };
+
 void keymap_detail(void)
 {
 	int i;
