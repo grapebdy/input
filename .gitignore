@@ -14,4 +14,4 @@ tools/key
 tools/virtkey
 
 #for release files
-*.tar
+*.tar.gz
