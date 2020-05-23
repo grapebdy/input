@@ -9,9 +9,9 @@
 
 tags
 
-
 # for test files
-test/key
-test/virtkey
+tools/key
+tools/virtkey
+
 #for release files
 *.tar

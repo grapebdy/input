@@ -1,10 +1,11 @@
 ifneq ($(KERNELRELEASE),)
 obj-m := virtkey.o
 else
-#KDIR :=/home/mprc/linux-3.19/
-KDIR :=/opt/work/P86/working/linux-3.10/
+KDIR :=/lib/modules/$(shell uname -r)/build/
+MDIR :=$(PWD)
+
 all:
-	make -C $(KDIR) M=$(PWD) modules
+	make -C $(KDIR) M=$(MDIR) modules
 
 clean:
 	@rm -rf *.ko *.o *.mod.o *.mod.c *.symvers  modul* .*.cmd .tmp_versions/
