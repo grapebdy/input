@@ -4,8 +4,12 @@ INSTALL_DIR=virtkeyborad
 
 all: build
 
-build:
+build: driver tools tags
+
+driver: FORCE
 	make -C driver MDIR=$(PWD)/driver all
+
+tools: FORCE
 	make -C tools
 
 clean:
@@ -22,3 +26,9 @@ release:
 
 distclean: clean
 	@rm -fr virtkey-*.tar.gz
+
+tags:
+	@ctags -R
+
+FORCE:
+.PHONY: $(PHONY)
