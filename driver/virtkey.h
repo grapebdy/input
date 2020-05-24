@@ -12,7 +12,7 @@
 #include <linux/list.h>
 #include <linux/cdev.h>
 
-#include "../include/common.h"
+#include "../include/virtkey.h"
 
 #define  BUTTON_IRQ 0xb
 #define  KEY_MAP_SIZE 113

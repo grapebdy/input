@@ -7,11 +7,17 @@
 *.symvers
 .tmp_versions/
 
+
+*.so*
+*.a*
+
 tags
 
 # for test files
 tools/key
-tools/virtkey
+tools/virtkey-tools
 
 #for release files
 *.tar.gz
+
+out/*

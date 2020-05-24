@@ -72,8 +72,9 @@ int main(void)
 {
 	int fd_kbd;
 	int fd_mouse;
+#if 0
 	int i = 0;
-
+#endif
 	fd_kbd = open("/dev/input/event0", O_RDWR);
 	if (fd_kbd <= 0) {
 	    printf("error open keyboard:\n");
