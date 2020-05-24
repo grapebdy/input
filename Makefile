@@ -1,6 +1,5 @@
 GIT_VER=`git log --oneline | head -n 1 | cut -d ' ' -f 1`
 TOOLS_VERSION=$(GIT_VER)-linux
-INSTALL_DIR=virtkeyborad
 
 VERSION=0.1
 
@@ -36,12 +35,9 @@ install:
 	@make -C lib INSTALLDIR=$(INSTALLDIR) install
 	@make -C include INSTALLDIR=$(INSTALLDIR) install
 
-release:
-	@test -d $(INSTALL_DIR) || mkdir $(INSTALL_DIR)
-	@cp -fr driver/virtkey.ko $(INSTALL_DIR)/
-	@cp -fr tools/virtkey      $(INSTALL_DIR)/
-	@tar cjmf virtkey-utils-$(TOOLS_VERSION).tar.gz $(INSTALL_DIR)/
-	@rm -fr $(INSTALL_DIR)/
+release: install
+	@./script/make-tar.sh $(PROJ_OUT) $(RELNAME)
+	@rm -fr $(INSTALLDIR)
 
 distclean: clean
 	@rm -fr virtkey-*.tar.gz
